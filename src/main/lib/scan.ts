@@ -22,7 +22,12 @@ const IGNORE_DIRS = new Set([
 
 export async function scanFolder(root: string): Promise<ScanResult> {
   if (!root) {
-    return { root: "", scannedAt: new Date().toISOString(), projects: [], error: "Informe uma pasta para escanear." };
+    return {
+      root: "",
+      scannedAt: new Date().toISOString(),
+      projects: [],
+      error: { code: "emptyRoot" },
+    };
   }
 
   const normalizedRoot = path.normalize(root);
@@ -32,7 +37,7 @@ export async function scanFolder(root: string): Promise<ScanResult> {
       root: normalizedRoot,
       scannedAt: new Date().toISOString(),
       projects: [],
-      error: `A pasta "${normalizedRoot}" não foi encontrada neste computador.`,
+      error: { code: "folderNotFound", params: { path: normalizedRoot } },
     };
   }
 
@@ -44,7 +49,7 @@ export async function scanFolder(root: string): Promise<ScanResult> {
       root: normalizedRoot,
       scannedAt: new Date().toISOString(),
       projects: [],
-      error: `Não foi possível ler a pasta "${normalizedRoot}". Verifique as permissões de acesso.`,
+      error: { code: "folderReadFailed", params: { path: normalizedRoot } },
     };
   }
 

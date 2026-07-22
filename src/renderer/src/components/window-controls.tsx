@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Maximize2, Minimize2, Minus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n/context";
 
 export function WindowControls() {
+  const { t } = useTranslation();
   const [isFullscreen, setIsFullscreen] = useState(true);
 
   useEffect(() => {
@@ -14,7 +16,7 @@ export function WindowControls() {
     <div className="app-no-drag flex items-center gap-1">
       <button
         onClick={() => window.devboard.windowMinimize()}
-        title="Minimizar"
+        title={t(d => d.window.minimize)}
         className={cn(
           "flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors",
           "hover:bg-accent hover:text-foreground"
@@ -24,7 +26,7 @@ export function WindowControls() {
       </button>
       <button
         onClick={() => window.devboard.windowToggleFullscreen()}
-        title={isFullscreen ? "Reduzir tamanho" : "Tela cheia"}
+        title={isFullscreen ? t(d => d.window.reduce) : t(d => d.window.fullscreen)}
         className={cn(
           "flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors",
           "hover:bg-accent hover:text-foreground"
@@ -34,7 +36,7 @@ export function WindowControls() {
       </button>
       <button
         onClick={() => window.devboard.windowClose()}
-        title="Fechar"
+        title={t(d => d.window.close)}
         className={cn(
           "flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors",
           "hover:bg-destructive hover:text-destructive-foreground"

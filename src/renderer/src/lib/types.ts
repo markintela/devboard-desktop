@@ -52,9 +52,29 @@ export interface ProjectInfo {
   solutionPath: string | null;
 }
 
+export type ErrorCode =
+  | "communicationFailed"
+  | "emptyRoot"
+  | "folderNotFound"
+  | "folderReadFailed"
+  | "projectNotFound"
+  | "vscodeNotFound"
+  | "visualstudioWindowsOnly"
+  | "noSolutionFile"
+  | "visualstudioOpenFailed"
+  | "forkOpenFailed"
+  | "explorerOpenFailed"
+  | "unknownEditor"
+  | "runUnsupportedTech";
+
+export interface AppError {
+  code: ErrorCode;
+  params?: Record<string, string>;
+}
+
 export interface ScanResult {
   root: string;
   scannedAt: string;
   projects: ProjectInfo[];
-  error?: string;
+  error?: AppError;
 }

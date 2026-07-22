@@ -1,16 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { ProjectCard } from "@/components/project-card";
+import { ProjectDetailsPage } from "@/components/project-details-page";
 import { TechIcon, TECH_META } from "@/components/tech-icon";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AutostartToggle } from "@/components/autostart-toggle";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { WindowControls } from "@/components/window-controls";
 import { Logo } from "@/components/logo";
 import { SplashScreen } from "@/components/splash-screen";
+import { useTranslation, LOCALE_MAP } from "@/lib/i18n/context";
+import { translateAppError } from "@/lib/translate-error";
 import type { ProjectInfo, ScanResult, TechId } from "@/lib/types";
 import {
   FolderSearch,
@@ -28,6 +31,7 @@ import { cn } from "@/lib/utils";
 const LAST_ROOT_KEY = "devboard-last-root";
 
 export function Dashboard() {
+  const { t, language } = useTranslation();
   const [rootInput, setRootInput] = useState("");
   const [scannedRoot, setScannedRoot] = useState<string | null>(null);
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
@@ -37,6 +41,7 @@ export function Dashboard() {
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [activeTech, setActiveTech] = useState<TechId | null>(null);
+  const [selectedProject, setSelectedProject] = useState<ProjectInfo | null>(null);
 
   async function scan(root: string) {
     setLoading(true);
@@ -44,7 +49,7 @@ export function Dashboard() {
     try {
       const data: ScanResult = await window.devboard.scanFolder(root);
       if (data.error) {
-        setError(data.error);
+        setError(translateAppError(t, data.error));
         setProjects([]);
         setScannedRoot(data.root || null);
         setScannedAt(data.scannedAt);
@@ -55,7 +60,7 @@ export function Dashboard() {
         localStorage.setItem(LAST_ROOT_KEY, data.root);
       }
     } catch {
-      setError("Não foi possível conversar com o processo principal do DevBoard.");
+      setError(t(d => d.errors.communicationFailed));
     } finally {
       setLoading(false);
       setInitialLoading(false);
@@ -119,9 +124,12 @@ export function Dashboard() {
           <div className="flex items-center gap-3">
             {scannedAt && (
               <p className="hidden font-mono text-xs text-muted-foreground sm:block">
-                último scan: {new Date(scannedAt).toLocaleTimeString("pt-BR")}
+                {t(d => d.header.lastScan, {
+                  time: new Date(scannedAt).toLocaleTimeString(LOCALE_MAP[language]),
+                })}
               </p>
             )}
+            <LanguageSwitcher />
             <AutostartToggle />
             <ThemeToggle />
             <div className="h-6 w-px bg-border" />
@@ -130,6 +138,9 @@ export function Dashboard() {
         </div>
       </header>
 
+      {selectedProject ? (
+        <ProjectDetailsPage project={selectedProject} onBack={() => setSelectedProject(null)} />
+      ) : (
       <main className="container flex flex-col gap-6 py-8">
         {/* scan control */}
         <div className="flex flex-col gap-3 rounded-lg border border-border/70 bg-card/60 p-4 sm:flex-row sm:items-center">
@@ -139,7 +150,7 @@ export function Dashboard() {
               value={rootInput}
               onChange={(e) => setRootInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && scan(rootInput)}
-              placeholder="C:\Users\voce\Projetos"
+              placeholder={t(d => d.scan.placeholder)}
               className="border-0 bg-transparent px-0 font-mono text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
             />
           </div>
@@ -150,11 +161,11 @@ export function Dashboard() {
             className="gap-2 sm:w-auto"
           >
             <FolderOpen className="h-4 w-4" />
-            Escolher pasta
+            {t(d => d.scan.browse)}
           </Button>
           <Button onClick={() => scan(rootInput)} disabled={loading} className="gap-2 sm:w-auto">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-            Escanear pasta
+            {t(d => d.scan.scanButton)}
           </Button>
         </div>
 
@@ -167,12 +178,12 @@ export function Dashboard() {
 
         {/* stats row */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatCard icon={Boxes} label="Projetos encontrados" value={projects.length} />
-          <StatCard icon={FolderGit2} label="Repositórios Git" value={repoCount} />
-          <StatCard icon={TerminalSquare} label="Tecnologias distintas" value={techCounts.length} />
+          <StatCard icon={Boxes} label={t(d => d.stats.projectsFound)} value={projects.length} />
+          <StatCard icon={FolderGit2} label={t(d => d.stats.gitRepos)} value={repoCount} />
+          <StatCard icon={TerminalSquare} label={t(d => d.stats.distinctTechs)} value={techCounts.length} />
           <StatCard
             icon={FolderSearch}
-            label="Pasta escaneada"
+            label={t(d => d.stats.scannedFolder)}
             value={scannedRoot ?? "—"}
             isPath
           />
@@ -186,7 +197,7 @@ export function Dashboard() {
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Filtrar por nome..."
+                placeholder={t(d => d.filters.placeholder)}
                 className="border-0 bg-transparent px-0 focus-visible:ring-0 focus-visible:ring-offset-0"
               />
             </div>
@@ -200,7 +211,7 @@ export function Dashboard() {
                     : "border-border text-muted-foreground hover:text-foreground"
                 )}
               >
-                Todas
+                {t(d => d.filters.all)}
               </button>
               {techCounts.map(([tech, count]) => (
                 <button
@@ -234,7 +245,7 @@ export function Dashboard() {
         ) : filteredProjects.length > 0 ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredProjects.map((project) => (
-              <ProjectCard key={project.path} project={project} />
+              <ProjectCard key={project.path} project={project} onOpenDetails={setSelectedProject} />
             ))}
           </div>
         ) : (
@@ -243,15 +254,16 @@ export function Dashboard() {
               <FolderSearch className="h-8 w-8 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">
                 {scannedRoot === null
-                  ? "Escolha uma pasta com seus projetos para começar."
+                  ? t(d => d.empty.chooseFolder)
                   : projects.length === 0
-                  ? "Nenhum projeto encontrado nessa pasta ainda."
-                  : "Nenhum projeto corresponde ao filtro atual."}
+                  ? t(d => d.empty.noProjects)
+                  : t(d => d.empty.noMatch)}
               </p>
             </div>
           )
         )}
       </main>
+      )}
     </div>
   );
 }

@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { Rocket } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n/context";
 
 export function AutostartToggle() {
+  const { t } = useTranslation();
   const [enabled, setEnabled] = useState(false);
 
   useEffect(() => {
@@ -31,9 +33,7 @@ export function AutostartToggle() {
           <Rocket className="h-4 w-4" />
         </button>
       </TooltipTrigger>
-      <TooltipContent>
-        {enabled ? "Iniciar com o Windows: ativado" : "Iniciar com o Windows: desativado"}
-      </TooltipContent>
+      <TooltipContent>{enabled ? t(d => d.autostart.enabled) : t(d => d.autostart.disabled)}</TooltipContent>
     </Tooltip>
   );
 }

@@ -3,6 +3,17 @@ import { join } from "path";
 import { is } from "./lib/env";
 import { scanFolder } from "./lib/scan";
 import { openInEditor, type EditorTarget } from "./lib/open-editor";
+import {
+  runProject,
+  stopProject,
+  getStatus,
+  getUrl,
+  setStatusChangeListener,
+  setUrlChangeListener,
+  stopAllProjects,
+} from "./lib/run-project";
+import { listImprovements, addImprovement, removeImprovement } from "./lib/improvements";
+import type { TechId } from "./lib/types";
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -80,9 +91,9 @@ app.whenReady().then(() => {
     "devboard:open-editor",
     async (event, payload: { path: string; editor: EditorTarget; solutionPath: string | null }) => {
       // O fullscreen do Electron no Windows ocupa a tela inteira de forma
-      // exclusiva e pode impedir QUALQUER outra janela (Fork, PowerShell,
-      // Git Bash, etc.) de aparecer por cima. Sai do fullscreen antes de
-      // abrir uma ferramenta externa pra garantir que a janela dela apareça.
+      // exclusiva e pode impedir QUALQUER outra janela (Fork, Explorador,
+      // etc.) de aparecer por cima. Sai do fullscreen antes de abrir uma
+      // ferramenta externa pra garantir que a janela dela apareça.
       const win = BrowserWindow.fromWebContents(event.sender);
       if (win?.isFullScreen()) {
         win.setFullScreen(false);
@@ -117,6 +128,52 @@ app.whenReady().then(() => {
     return BrowserWindow.fromWebContents(event.sender)?.isFullScreen() ?? false;
   });
 
+  setStatusChangeListener((projectPath, status) => {
+    for (const win of BrowserWindow.getAllWindows()) {
+      win.webContents.send("devboard:project-status-changed", { path: projectPath, status });
+    }
+  });
+
+  setUrlChangeListener((projectPath, url) => {
+    for (const win of BrowserWindow.getAllWindows()) {
+      win.webContents.send("devboard:project-url-changed", { path: projectPath, url });
+    }
+  });
+
+  ipcMain.handle("devboard:run-project", (_event, payload: { path: string; technologies: TechId[] }) => {
+    return runProject(payload.path, payload.technologies);
+  });
+
+  ipcMain.handle("devboard:stop-project", (_event, payload: { path: string }) => {
+    return stopProject(payload.path);
+  });
+
+  ipcMain.handle("devboard:project-status", (_event, payload: { path: string }) => {
+    return { status: getStatus(payload.path) };
+  });
+
+  ipcMain.handle("devboard:project-url", (_event, payload: { path: string }) => {
+    return { url: getUrl(payload.path) };
+  });
+
+  ipcMain.handle("devboard:list-improvements", (_event, payload: { path: string; name: string }) => {
+    return listImprovements(payload.path, payload.name);
+  });
+
+  ipcMain.handle(
+    "devboard:add-improvement",
+    (_event, payload: { path: string; name: string; text: string }) => {
+      return addImprovement(payload.path, payload.name, payload.text);
+    }
+  );
+
+  ipcMain.handle(
+    "devboard:remove-improvement",
+    (_event, payload: { path: string; name: string; index: number }) => {
+      return removeImprovement(payload.path, payload.name, payload.index);
+    }
+  );
+
   createWindow();
 
   app.on("activate", function () {
@@ -128,4 +185,8 @@ app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
   }
+});
+
+app.on("before-quit", () => {
+  stopAllProjects();
 });

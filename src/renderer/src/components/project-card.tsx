@@ -2,8 +2,14 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { TechIcon, TECH_META } from "@/components/tech-icon";
+import { QuickActionButton } from "@/components/quick-action-button";
+import { RunStatusButton } from "@/components/run-status-button";
+import { RunningUrlLink } from "@/components/running-url-link";
+import { canRunProject } from "@/lib/run-support";
+import { timeAgo } from "@/lib/format";
+import { useTranslation } from "@/lib/i18n/context";
+import { translateAppError } from "@/lib/translate-error";
 import {
   FolderGit2,
   GitBranch,
@@ -11,33 +17,25 @@ import {
   Code2,
   Layers,
   ChevronDown,
+  ChevronRight,
   ExternalLink,
   Loader2,
   GitFork,
   FolderOpen,
-  SquareTerminal,
 } from "lucide-react";
 import type { ProjectInfo } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-type QuickAction = "fork" | "explorer" | "powershell";
+type QuickAction = "fork" | "explorer";
 
-function timeAgo(iso: string | null): string {
-  if (!iso) return "sem atividade registrada";
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const minutes = Math.floor(diffMs / 60000);
-  if (minutes < 1) return "agora mesmo";
-  if (minutes < 60) return `há ${minutes} min`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `há ${hours} h`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `há ${days} d`;
-  const months = Math.floor(days / 30);
-  if (months < 12) return `há ${months} m`;
-  return `há ${Math.floor(months / 12)} a`;
-}
-
-export function ProjectCard({ project }: { project: ProjectInfo }) {
+export function ProjectCard({
+  project,
+  onOpenDetails,
+}: {
+  project: ProjectInfo;
+  onOpenDetails: (project: ProjectInfo) => void;
+}) {
+  const { t } = useTranslation();
   const [branchesOpen, setBranchesOpen] = useState(false);
   const [opening, setOpening] = useState<"vscode" | "visualstudio" | QuickAction | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -54,11 +52,11 @@ export function ProjectCard({ project }: { project: ProjectInfo }) {
         editor,
         solutionPath: project.solutionPath,
       });
-      if (!data.ok) {
-        setFeedback(data.error ?? "Não foi possível abrir o editor.");
+      if (!data.ok && data.error) {
+        setFeedback(translateAppError(t, data.error));
       }
     } catch {
-      setFeedback("Falha de comunicação com o processo principal do DevBoard.");
+      setFeedback(t(d => d.errors.communicationFailed));
     } finally {
       setOpening(null);
     }
@@ -77,12 +75,12 @@ export function ProjectCard({ project }: { project: ProjectInfo }) {
           {project.git.isRepo ? (
             <>
               <FolderGit2 className="h-3 w-3" />
-              repo
+              {t(d => d.card.repo)}
             </>
           ) : (
             <>
               <Layers className="h-3 w-3" />
-              pasta local
+              {t(d => d.card.localFolder)}
             </>
           )}
         </div>
@@ -113,7 +111,7 @@ export function ProjectCard({ project }: { project: ProjectInfo }) {
         <div className="mt-auto flex flex-col gap-2 text-xs text-muted-foreground">
           <div className="flex items-center gap-1.5">
             <Clock className="h-3.5 w-3.5" />
-            atualizado {timeAgo(project.updatedAt)}
+            {t(d => d.card.updated, { time: timeAgo(project.updatedAt, t) })}
           </div>
 
           {project.git.isRepo && (
@@ -125,7 +123,8 @@ export function ProjectCard({ project }: { project: ProjectInfo }) {
                 <GitBranch className="h-3.5 w-3.5 text-secondary" />
                 <span className="font-mono text-foreground">{project.git.currentBranch ?? "—"}</span>
                 <span className="text-muted-foreground">
-                  · {project.git.branches.length} branch{project.git.branches.length !== 1 ? "es" : ""}
+                  · {project.git.branches.length}{" "}
+                  {project.git.branches.length !== 1 ? t(d => d.card.branchPlural) : t(d => d.card.branchSingular)}
                 </span>
                 <ChevronDown
                   className={cn("ml-auto h-3.5 w-3.5 transition-transform", branchesOpen && "rotate-180")}
@@ -169,7 +168,7 @@ export function ProjectCard({ project }: { project: ProjectInfo }) {
             disabled={opening !== null}
           >
             {opening === "vscode" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Code2 className="h-3.5 w-3.5" />}
-            VS Code
+            {t(d => d.card.vscode)}
           </Button>
           <Button
             size="sm"
@@ -177,40 +176,44 @@ export function ProjectCard({ project }: { project: ProjectInfo }) {
             className="flex-1 gap-1.5"
             onClick={() => openIn("visualstudio")}
             disabled={opening !== null || !project.hasSolution}
-            title={!project.hasSolution ? "Nenhum arquivo .sln encontrado" : undefined}
+            title={!project.hasSolution ? t(d => d.card.noSolutionTitle) : undefined}
           >
             {opening === "visualstudio" ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : (
               <ExternalLink className="h-3.5 w-3.5" />
             )}
-            Visual Studio
+            {t(d => d.card.visualStudio)}
           </Button>
         </div>
 
         <div className="flex gap-2">
           <QuickActionButton
-            label="Abrir no Fork"
+            label={t(d => d.card.openFork)}
             icon={GitFork}
             loading={opening === "fork"}
             disabled={opening !== null || !project.git.isRepo}
             onClick={() => openIn("fork")}
           />
           <QuickActionButton
-            label="Abrir no Explorador de Arquivos"
+            label={t(d => d.card.openExplorer)}
             icon={FolderOpen}
             loading={opening === "explorer"}
             disabled={opening !== null}
             onClick={() => openIn("explorer")}
           />
-          <QuickActionButton
-            label="Abrir PowerShell aqui"
-            icon={SquareTerminal}
-            loading={opening === "powershell"}
-            disabled={opening !== null}
-            onClick={() => openIn("powershell")}
-          />
+          {canRunProject(project.technologies) && <RunStatusButton project={project} onError={setFeedback} />}
         </div>
+
+        <RunningUrlLink project={project} className="flex items-center gap-1.5 rounded-md border border-emerald-500/30 bg-emerald-500/5 px-2.5 py-1.5 font-mono text-[11px] text-emerald-400 transition-colors hover:bg-emerald-500/10" />
+
+        <button
+          onClick={() => onOpenDetails(project)}
+          className="flex items-center justify-center gap-1 rounded-md py-1.5 text-xs text-muted-foreground transition-colors hover:text-primary"
+        >
+          {t(d => d.card.viewDetails)}
+          <ChevronRight className="h-3.5 w-3.5" />
+        </button>
       </CardContent>
 
       <div
@@ -218,37 +221,5 @@ export function ProjectCard({ project }: { project: ProjectInfo }) {
         style={{ backgroundColor: accentColor }}
       />
     </Card>
-  );
-}
-
-function QuickActionButton({
-  label,
-  icon: Icon,
-  loading,
-  disabled,
-  onClick,
-}: {
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  loading: boolean;
-  disabled: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          size="sm"
-          variant="outline"
-          className="flex-1"
-          onClick={onClick}
-          disabled={disabled}
-          aria-label={label}
-        >
-          {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Icon className="h-3.5 w-3.5" />}
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent>{label}</TooltipContent>
-    </Tooltip>
   );
 }

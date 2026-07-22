@@ -2,8 +2,9 @@ import { exec, execFile, spawn } from "child_process";
 import fs from "fs";
 import path from "path";
 import { shell } from "electron";
+import type { AppError } from "./types";
 
-export type EditorTarget = "vscode" | "visualstudio" | "fork" | "explorer" | "powershell";
+export type EditorTarget = "vscode" | "visualstudio" | "fork" | "explorer";
 
 interface OpenPayload {
   path: string;
@@ -13,7 +14,7 @@ interface OpenPayload {
 
 interface OpenResult {
   ok: boolean;
-  error?: string;
+  error?: AppError;
 }
 
 function run(command: string): Promise<void> {
@@ -88,7 +89,7 @@ export async function openInEditor(payload: OpenPayload): Promise<OpenResult> {
   const { path: projectPath, editor, solutionPath } = payload;
 
   if (!projectPath || !fs.existsSync(projectPath)) {
-    return { ok: false, error: "Pasta do projeto não encontrada." };
+    return { ok: false, error: { code: "projectNotFound" } };
   }
 
   if (editor === "vscode") {
@@ -98,28 +99,24 @@ export async function openInEditor(payload: OpenPayload): Promise<OpenResult> {
       await run(`code "${projectPath}"`);
       return { ok: true };
     } catch {
-      return {
-        ok: false,
-        error:
-          "Não foi possível abrir o VS Code. Verifique se o comando 'code' está instalado no PATH (Ctrl+Shift+P → 'Shell Command: Install code command in PATH').",
-      };
+      return { ok: false, error: { code: "vscodeNotFound" } };
     }
   }
 
   if (editor === "visualstudio") {
     if (process.platform !== "win32") {
-      return { ok: false, error: "O Visual Studio só pode ser aberto a partir do Windows." };
+      return { ok: false, error: { code: "visualstudioWindowsOnly" } };
     }
     if (!solutionPath || !fs.existsSync(solutionPath)) {
-      return { ok: false, error: "Nenhum arquivo .sln foi encontrado nesta pasta." };
+      return { ok: false, error: { code: "noSolutionFile" } };
     }
     try {
       // Usa a associação de arquivo padrão do Windows para .sln (normalmente o devenv.exe).
       const errorMessage = await shell.openPath(solutionPath);
-      if (errorMessage) return { ok: false, error: errorMessage };
+      if (errorMessage) return { ok: false, error: { code: "visualstudioOpenFailed" } };
       return { ok: true };
     } catch {
-      return { ok: false, error: "Não foi possível abrir o Visual Studio." };
+      return { ok: false, error: { code: "visualstudioOpenFailed" } };
     }
   }
 
@@ -135,40 +132,19 @@ export async function openInEditor(payload: OpenPayload): Promise<OpenResult> {
       }
       return { ok: true };
     } catch {
-      return {
-        ok: false,
-        error:
-          "Não foi possível abrir o Fork. Verifique se ele está instalado, ou habilite a ferramenta de linha de comando em Preferences → Integration → Install Command Line Tool.",
-      };
+      return { ok: false, error: { code: "forkOpenFailed" } };
     }
   }
 
   if (editor === "explorer") {
     try {
       const errorMessage = await shell.openPath(projectPath);
-      if (errorMessage) return { ok: false, error: errorMessage };
+      if (errorMessage) return { ok: false, error: { code: "explorerOpenFailed" } };
       return { ok: true };
     } catch {
-      return { ok: false, error: "Não foi possível abrir o Explorador de Arquivos." };
+      return { ok: false, error: { code: "explorerOpenFailed" } };
     }
   }
 
-  if (editor === "powershell") {
-    if (process.platform !== "win32") {
-      return { ok: false, error: "O PowerShell só pode ser aberto a partir do Windows." };
-    }
-    try {
-      const escapedPath = projectPath.replace(/'/g, "''");
-      await spawnDetached(
-        "powershell.exe",
-        ["-NoExit", "-Command", `Set-Location -LiteralPath '${escapedPath}'`],
-        projectPath
-      );
-      return { ok: true };
-    } catch {
-      return { ok: false, error: "Não foi possível abrir o PowerShell." };
-    }
-  }
-
-  return { ok: false, error: "Editor desconhecido." };
+  return { ok: false, error: { code: "unknownEditor" } };
 }
