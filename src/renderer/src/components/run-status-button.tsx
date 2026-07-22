@@ -16,7 +16,14 @@ export function RunStatusButton({
 }) {
   const { status, busy, toggle } = useProjectRuntime(project);
   const { t } = useTranslation();
+  const isStarting = status === "starting";
   const isRunning = status === "running";
+
+  const tooltip = isStarting
+    ? t(d => d.run.startingTooltip)
+    : isRunning
+      ? t(d => d.run.runningTooltip)
+      : t(d => d.run.stoppedTooltip);
 
   return (
     <Tooltip>
@@ -26,13 +33,14 @@ export function RunStatusButton({
           variant="outline"
           className={cn(
             "relative flex-1",
-            isRunning && "border-emerald-500/40 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
+            isRunning && "border-emerald-500/40 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20",
+            isStarting && "border-amber-500/40 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20"
           )}
           onClick={() => toggle(error => onError?.(translateAppError(t, error)))}
           disabled={busy}
-          aria-label={isRunning ? t(d => d.run.stopAria) : t(d => d.run.runAria)}
+          aria-label={isRunning || isStarting ? t(d => d.run.stopAria) : t(d => d.run.runAria)}
         >
-          {busy ? (
+          {busy || isStarting ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
           ) : isRunning ? (
             <Square className="h-3.5 w-3.5" />
@@ -42,12 +50,12 @@ export function RunStatusButton({
           <span
             className={cn(
               "absolute right-1 top-1 h-1.5 w-1.5 rounded-full",
-              isRunning ? "bg-emerald-400" : "bg-muted-foreground/40"
+              isRunning ? "bg-emerald-400" : isStarting ? "bg-amber-400" : "bg-muted-foreground/40"
             )}
           />
         </Button>
       </TooltipTrigger>
-      <TooltipContent>{isRunning ? t(d => d.run.runningTooltip) : t(d => d.run.stoppedTooltip)}</TooltipContent>
+      <TooltipContent>{tooltip}</TooltipContent>
     </Tooltip>
   );
 }

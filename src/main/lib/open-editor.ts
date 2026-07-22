@@ -1,4 +1,4 @@
-import { exec, execFile, spawn } from "child_process";
+import { exec, execFile, execFileSync, spawn } from "child_process";
 import fs from "fs";
 import path from "path";
 import { shell } from "electron";
@@ -85,6 +85,49 @@ function resolveForkExecutable(): string | null {
   return candidates.find((candidate) => fs.existsSync(candidate)) ?? null;
 }
 
+// Localiza o devenv.exe do Visual Studio 2022 especificamente. Com mais de
+// uma versão instalada (ex.: 2022 + 2026), a associação de arquivo do
+// Windows para .sln/.csproj pode apontar pra outra versão, ou nem estar
+// registrada de forma confiável — por isso abrimos o executável direto
+// em vez de depender do shell.openPath().
+function resolveVisualStudio2022(): string | null {
+  if (process.platform !== "win32") return null;
+
+  const programFiles = process.env["ProgramFiles"];
+  const programFilesX86 = process.env["ProgramFiles(x86)"];
+
+  const vswhereCandidates = [programFilesX86, programFiles]
+    .filter((root): root is string => Boolean(root))
+    .map(root => path.join(root, "Microsoft Visual Studio", "Installer", "vswhere.exe"));
+
+  for (const vswhere of vswhereCandidates) {
+    if (!fs.existsSync(vswhere)) continue;
+    try {
+      // Faixa [17.0,18.0) é o Visual Studio 2022 (major version 17.x).
+      const output = execFileSync(vswhere, ["-version", "[17.0,18.0)", "-property", "installationPath"], {
+        encoding: "utf-8",
+      }).trim();
+      const installationPath = output.split(/\r?\n/)[0]?.trim();
+      if (installationPath) {
+        const devenv = path.join(installationPath, "Common7", "IDE", "devenv.exe");
+        if (fs.existsSync(devenv)) return devenv;
+      }
+    } catch {
+      // vswhere não encontrou nenhuma instalação do 2022 — segue pro fallback manual.
+    }
+  }
+
+  const editions = ["Community", "Professional", "Enterprise", "BuildTools"];
+  for (const root of [programFiles, programFilesX86].filter((r): r is string => Boolean(r))) {
+    for (const edition of editions) {
+      const devenv = path.join(root, "Microsoft Visual Studio", "2022", edition, "Common7", "IDE", "devenv.exe");
+      if (fs.existsSync(devenv)) return devenv;
+    }
+  }
+
+  return null;
+}
+
 export async function openInEditor(payload: OpenPayload): Promise<OpenResult> {
   const { path: projectPath, editor, solutionPath } = payload;
 
@@ -110,10 +153,15 @@ export async function openInEditor(payload: OpenPayload): Promise<OpenResult> {
     if (!solutionPath || !fs.existsSync(solutionPath)) {
       return { ok: false, error: { code: "noSolutionFile" } };
     }
+    const devenv = resolveVisualStudio2022();
     try {
-      // Usa a associação de arquivo padrão do Windows para .sln (normalmente o devenv.exe).
-      const errorMessage = await shell.openPath(solutionPath);
-      if (errorMessage) return { ok: false, error: { code: "visualstudioOpenFailed" } };
+      if (devenv) {
+        await spawnDetached(devenv, [solutionPath], projectPath);
+      } else {
+        // Sem VS 2022 encontrado: cai pra associação de arquivo padrão do Windows.
+        const errorMessage = await shell.openPath(solutionPath);
+        if (errorMessage) return { ok: false, error: { code: "visualstudioOpenFailed" } };
+      }
       return { ok: true };
     } catch {
       return { ok: false, error: { code: "visualstudioOpenFailed" } };

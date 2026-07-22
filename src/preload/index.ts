@@ -12,7 +12,7 @@ export interface OpenEditorResult {
   error?: AppError;
 }
 
-export type ProjectStatus = "running" | "stopped";
+export type ProjectStatus = "starting" | "running" | "stopped";
 
 export interface RunProjectResult {
   ok: boolean;

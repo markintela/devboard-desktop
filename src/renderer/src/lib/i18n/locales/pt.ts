@@ -18,6 +18,8 @@ const pt = {
   filters: {
     placeholder: "Filtrar por nome...",
     all: "Todas",
+    api: "API",
+    frontend: "Frontend",
   },
   empty: {
     chooseFolder: "Escolha uma pasta com seus projetos para começar.",
@@ -32,12 +34,13 @@ const pt = {
     branchPlural: "branches",
     vscode: "VS Code",
     visualStudio: "Visual Studio",
-    noSolutionTitle: "Nenhum arquivo .sln encontrado",
+    noSolutionTitle: "Nenhum arquivo .sln ou .csproj encontrado",
     openFork: "Abrir no Fork",
     openExplorer: "Abrir no Explorador de Arquivos",
     viewDetails: "Ver detalhes e melhorias",
   },
   run: {
+    startingTooltip: "Iniciando... · clique para cancelar",
     runningTooltip: "Rodando · clique para parar",
     stoppedTooltip: "Parado · clique para rodar",
     runAria: "Rodar projeto",

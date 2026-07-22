@@ -18,6 +18,8 @@ const en: TranslationDict = {
   filters: {
     placeholder: "Filter by name...",
     all: "All",
+    api: "API",
+    frontend: "Frontend",
   },
   empty: {
     chooseFolder: "Choose a folder with your projects to get started.",
@@ -32,12 +34,13 @@ const en: TranslationDict = {
     branchPlural: "branches",
     vscode: "VS Code",
     visualStudio: "Visual Studio",
-    noSolutionTitle: "No .sln file found",
+    noSolutionTitle: "No .sln or .csproj file found",
     openFork: "Open in Fork",
     openExplorer: "Open in File Explorer",
     viewDetails: "View details and improvements",
   },
   run: {
+    startingTooltip: "Starting... · click to cancel",
     runningTooltip: "Running · click to stop",
     stoppedTooltip: "Stopped · click to run",
     runAria: "Run project",

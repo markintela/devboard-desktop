@@ -14,6 +14,7 @@ import { Logo } from "@/components/logo";
 import { SplashScreen } from "@/components/splash-screen";
 import { useTranslation, LOCALE_MAP } from "@/lib/i18n/context";
 import { translateAppError } from "@/lib/translate-error";
+import { matchesTechCategory, type TechCategory } from "@/lib/tech-category";
 import type { ProjectInfo, ScanResult, TechId } from "@/lib/types";
 import {
   FolderSearch,
@@ -25,6 +26,8 @@ import {
   TerminalSquare,
   AlertTriangle,
   Loader2,
+  Server,
+  AppWindow,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -41,6 +44,7 @@ export function Dashboard() {
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [activeTech, setActiveTech] = useState<TechId | null>(null);
+  const [activeCategory, setActiveCategory] = useState<TechCategory | null>(null);
   const [selectedProject, setSelectedProject] = useState<ProjectInfo | null>(null);
 
   async function scan(root: string) {
@@ -100,9 +104,10 @@ export function Dashboard() {
     return projects.filter((project) => {
       const matchesQuery = project.name.toLowerCase().includes(query.toLowerCase());
       const matchesTech = activeTech ? project.technologies.includes(activeTech) : true;
-      return matchesQuery && matchesTech;
+      const matchesCategory = activeCategory ? matchesTechCategory(project.technologies, activeCategory) : true;
+      return matchesQuery && matchesTech && matchesCategory;
     });
-  }, [projects, query, activeTech]);
+  }, [projects, query, activeTech, activeCategory]);
 
   const repoCount = projects.filter((p) => p.git.isRepo).length;
 
@@ -191,15 +196,43 @@ export function Dashboard() {
 
         {/* filters */}
         {projects.length > 0 && (
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2 rounded-md border border-border/70 bg-background/40 px-3 sm:w-72">
-              <Search className="h-4 w-4 text-muted-foreground" />
-              <Input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={t(d => d.filters.placeholder)}
-                className="border-0 bg-transparent px-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-              />
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="flex items-center gap-2 rounded-md border border-border/70 bg-background/40 px-3 sm:w-72">
+                <Search className="h-4 w-4 text-muted-foreground" />
+                <Input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder={t(d => d.filters.placeholder)}
+                  className="border-0 bg-transparent px-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => setActiveCategory(activeCategory === "api" ? null : "api")}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                    activeCategory === "api"
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <Server className="h-3.5 w-3.5" />
+                  {t(d => d.filters.api)}
+                </button>
+                <button
+                  onClick={() => setActiveCategory(activeCategory === "frontend" ? null : "frontend")}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                    activeCategory === "frontend"
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <AppWindow className="h-3.5 w-3.5" />
+                  {t(d => d.filters.frontend)}
+                </button>
+              </div>
             </div>
             <div className="flex flex-wrap items-center gap-1.5">
               <button

@@ -79,7 +79,12 @@ export async function scanFolder(root: string): Promise<ScanResult> {
       updatedAt = null;
     }
 
+    // Nem todo projeto .NET tem um .sln (ex.: `dotnet new webapi` sozinho
+    // só gera o .csproj) — sem esse fallback, o botão do Visual Studio
+    // ficava desabilitado mesmo em projetos C# válidos.
     const slnName = entries.find((e) => e.toLowerCase().endsWith(".sln"));
+    const csprojName = entries.find((e) => e.toLowerCase().endsWith(".csproj"));
+    const solutionName = slnName ?? csprojName;
 
     projects.push({
       name: dirEntry.name,
@@ -88,8 +93,8 @@ export async function scanFolder(root: string): Promise<ScanResult> {
       git,
       updatedAt: git.lastCommitDate ?? updatedAt,
       sizeHint: entries.length,
-      hasSolution: Boolean(slnName),
-      solutionPath: slnName ? path.join(projectPath, slnName) : null,
+      hasSolution: Boolean(solutionName),
+      solutionPath: solutionName ? path.join(projectPath, solutionName) : null,
     });
   }
 

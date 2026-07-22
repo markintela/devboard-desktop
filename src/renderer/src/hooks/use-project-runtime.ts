@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import type { AppError, ProjectInfo } from "@/lib/types";
 
 export function useProjectRuntime(project: ProjectInfo) {
-  const [status, setStatus] = useState<"running" | "stopped">("stopped");
+  const [status, setStatus] = useState<"starting" | "running" | "stopped">("stopped");
   const [url, setUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -18,7 +18,7 @@ export function useProjectRuntime(project: ProjectInfo) {
     const unsubscribeStatus = window.devboard.onProjectStatusChange((path, newStatus) => {
       if (path !== project.path) return;
       setStatus(newStatus);
-      if (newStatus === "stopped") setUrl(null);
+      if (newStatus !== "running") setUrl(null);
     });
     const unsubscribeUrl = window.devboard.onProjectUrlChange((path, newUrl) => {
       if (path === project.path) setUrl(newUrl);
@@ -34,7 +34,7 @@ export function useProjectRuntime(project: ProjectInfo) {
   async function toggle(onError?: (error: AppError) => void) {
     setBusy(true);
     try {
-      if (status === "running") {
+      if (status === "running" || status === "starting") {
         await window.devboard.stopProject(project.path);
         setUrl(null);
       } else {
