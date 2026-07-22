@@ -1,6 +1,6 @@
 {
   "name": "devboard-desktop",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "DevBoard — dashboard local dos seus projetos de desenvolvimento, com detecção de tecnologias, branches do Git e atalhos para abrir no VS Code e no Visual Studio.",
   "author": "DevBoard",
   "main": "./out/main/index.js",
