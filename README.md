@@ -4,6 +4,20 @@ Dashboard **desktop nativo para Windows** que escaneia uma pasta do seu PC e mos
 
 Feito com **Electron + React + TypeScript + Vite + Tailwind CSS**, usando `electron-vite` como build tool e `electron-builder` para gerar o instalador.
 
+## Download
+
+[![Download](https://img.shields.io/github/v/release/markintela/devboard-desktop?label=baixar&style=for-the-badge)](https://github.com/markintela/devboard-desktop/releases/latest)
+
+Baixe o instalador `.exe` mais recente em **[Releases](https://github.com/markintela/devboard-desktop/releases/latest)** e rode — o instalador deixa escolher a pasta de instalação e cria atalho no Menu Iniciar e na Área de Trabalho.
+
+> O instalador não tem certificado de assinatura de código pago, então o Windows SmartScreen pode avisar "Editor desconhecido/Windows protegeu o computador". Clique em **Mais informações → Executar assim mesmo** pra prosseguir.
+
+## Screenshots
+
+| Dark | Light |
+|---|---|
+| ![DevBoard - tema escuro](docs/screenshot-dark.png) | ![DevBoard - tema claro](docs/screenshot-light.png) |
+
 ## Como rodar em modo desenvolvimento
 
 Pré-requisitos: [Node.js](https://nodejs.org) 20+, no Windows.
