@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
-    "build:win": "electron-vite build && electron-builder --win",
+    "build:win": "electron-vite build && electron-builder --win --publish never",
     "build:dir": "electron-vite build && electron-builder --win --dir",
     "preview": "electron-vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json"
