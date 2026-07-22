@@ -1,0 +1,146 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 25% 97%;
+    --foreground: 224 30% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 224 30% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 30% 12%;
+
+    --primary: 258 82% 57%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 174 55% 36%;
+    --secondary-foreground: 0 0% 100%;
+
+    --signal: 174 60% 40%;
+    --signal-foreground: 0 0% 100%;
+
+    --muted: 220 16% 92%;
+    --muted-foreground: 222 12% 42%;
+
+    --accent: 220 18% 90%;
+    --accent-foreground: 224 30% 12%;
+
+    --destructive: 6 72% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 15% 86%;
+    --input: 220 15% 86%;
+    --ring: 258 82% 57%;
+
+    --radius: 0.625rem;
+  }
+
+  .dark {
+    --background: 226 22% 7%;
+    --foreground: 42 24% 93%;
+
+    --card: 226 18% 10%;
+    --card-foreground: 42 24% 93%;
+
+    --popover: 226 20% 9%;
+    --popover-foreground: 42 24% 93%;
+
+    --primary: 258 90% 66%;
+    --primary-foreground: 226 30% 8%;
+
+    --secondary: 174 46% 42%;
+    --secondary-foreground: 226 30% 8%;
+
+    --signal: 174 60% 51%;
+    --signal-foreground: 226 30% 8%;
+
+    --muted: 225 14% 16%;
+    --muted-foreground: 225 12% 62%;
+
+    --accent: 225 16% 15%;
+    --accent-foreground: 42 24% 93%;
+
+    --destructive: 6 78% 58%;
+    --destructive-foreground: 42 24% 93%;
+
+    --border: 225 15% 19%;
+    --input: 225 15% 19%;
+    --ring: 258 90% 66%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    @apply bg-background text-foreground;
+    /* Fontes nativas do Windows: Segoe UI (interface) e Cascadia Mono/Consolas
+       (monoespaçada), para o app se sentir "de casa" no ecossistema Microsoft
+       sem depender de internet para carregar fontes. */
+    font-family: "Segoe UI Variable", "Segoe UI", "Cascadia Code", -apple-system, system-ui, sans-serif;
+    background-image: radial-gradient(circle at 15% 0%, hsl(var(--primary) / 0.08), transparent 40%),
+      radial-gradient(circle at 85% 20%, hsl(var(--signal) / 0.06), transparent 45%);
+    background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+}
+
+@layer utilities {
+  .font-mono {
+    font-family: "Cascadia Mono", "Cascadia Code", Consolas, "Courier New", monospace;
+    font-feature-settings: "liga" 0;
+  }
+
+  .terminal-dots span {
+    @apply inline-block h-2.5 w-2.5 rounded-full;
+  }
+
+  .card-enter {
+    animation: fade-in 0.4s ease-out both;
+  }
+
+  .glow-primary {
+    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.25), 0 8px 24px -12px hsl(var(--primary) / 0.35);
+  }
+
+  .app-drag {
+    -webkit-app-region: drag;
+  }
+
+  .app-no-drag {
+    -webkit-app-region: no-drag;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 999px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
